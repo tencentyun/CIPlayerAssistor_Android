@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     // 原始的媒体url（请替换为自己的媒体文件url）
-    private final String orgUrl = "https://ci-1258100000.cos.ap-beijing.myqcloud.com/hls/test.m3u8";
+    private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8";
     // 用于在子线程请求网络 获取token和授权
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     @Override
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Pair<String, String> getTokenAndAuthorization(CIMediaInfo ciMediaInfo) {
         HttpURLConnection urlConnection = null;
         try {
-            URL url = new URL("https://test.com/cos/samples/hls/token");
+            URL url = new URL("https://cos.cloud.tencent.com/samples/hls/token");
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("POST");
             urlConnection.setDoOutput(true);
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             JSONObject jsonObject = new JSONObject();
             // 添加键值对到JSONObject
             jsonObject.put("src", ciMediaInfo.getMediaUrl());
-            jsonObject.put("ProtectContentKey", ciMediaInfo.isPrivate()?1:0);
+            jsonObject.put("protectContentKey", ciMediaInfo.isPrivate()?1:0);
             if(ciMediaInfo.isPrivate()) {
                 jsonObject.put("publicKey", ciMediaInfo.getPublicKey());
             }
