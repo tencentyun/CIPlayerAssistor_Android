@@ -38,15 +38,5 @@
             android:paddingLeft="30dp"
             android:drawableRight="@drawable/arrow"
             android:text="私有加密M3U8"/>
-
-        <Button
-            android:id="@+id/btn_m3u8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="left|center_vertical"
-            android:layout_marginTop="20dp"
-            android:paddingLeft="30dp"
-            android:drawableRight="@drawable/arrow"
-            android:text="公有加密M3U8"/>
     </LinearLayout>
 </ScrollView>

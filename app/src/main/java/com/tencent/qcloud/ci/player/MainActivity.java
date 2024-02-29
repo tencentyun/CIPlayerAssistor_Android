@@ -47,7 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    // 原始的媒体url（请替换为自己的媒体文件url）
+    // 原始的媒体url，请替换成您业务的url，此处url仅为示例
     private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8";
     // 用于在子线程请求网络 获取token和授权
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -55,9 +55,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        findViewById(R.id.btn_m3u8).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption).setOnClickListener(this);
 
+        // 初始化万象播放协助器
         CIPlayerAssistor.getInstance().init();
         CIPlayerAssistor.getInstance().setLogEnable(BuildConfig.DEBUG);
     }
@@ -66,29 +66,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_m3u8_encryption:
-                CIMediaInfo ciMediaInfo = new CIMediaInfo(orgUrl, true);
+                // CIMediaInfo实例，可用于请求token
+                CIMediaInfo ciMediaInfo = new CIMediaInfo(orgUrl);
                 executorService.submit(() -> {
+                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
                     Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo);
+                    // 给ciMediaInfo设置获取到的token和授权信息
                     ciMediaInfo.setJwtToken(pair.first);
                     ciMediaInfo.setAuthorization(pair.second);
+                    // 获取最终的播放url
                     String url = CIPlayerAssistor.getInstance().buildPlayerUrl(ciMediaInfo);
                     String tag = "私有加密M3U8";
                     runOnUiThread(() -> startActivity(url, tag));
                 });
                 break;
-            case R.id.btn_m3u8:
-                CIMediaInfo ciMediaInfoPublic = new CIMediaInfo(orgUrl, false);
-                executorService.submit(() -> {
-                    Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfoPublic);
-                    ciMediaInfoPublic.setJwtToken(pair.first);
-                    ciMediaInfoPublic.setAuthorization(pair.second);
-                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(ciMediaInfoPublic);
-                    String tag = "公有加密M3U8";
-                    runOnUiThread(() -> startActivity(url, tag));
-                });
-                break;
         }
-
     }
 
     private void startActivity(String url, String tag){
@@ -101,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // 用完记得销毁
+        // 用完播放器记得销毁
         CIPlayerAssistor.getInstance().destroy();
     }
 
@@ -111,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Pair<String, String> getTokenAndAuthorization(CIMediaInfo ciMediaInfo) {
         HttpURLConnection urlConnection = null;
         try {
+            // 该url仅为示例，请替换成您业务的url，具体实现请参考 “业务后端示例代码”
             URL url = new URL("https://cos.cloud.tencent.com/samples/hls/token");
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("POST");
