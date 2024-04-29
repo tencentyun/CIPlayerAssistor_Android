@@ -28,6 +28,7 @@ import static com.tencent.qcloud.ci.player.VideoPlayerActivity.EXTRA_URL;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -43,6 +44,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,9 +64,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findViewById(R.id.btn_m3u8_encryption).setOnClickListener(this);
+        findViewById(R.id.btn_m3u8_encryption1).setOnClickListener(this);
 
         // 初始化万象播放协助器
-        CIPlayerAssistor.getInstance().init();
+        CIPlayerAssistor.getInstance().init(this);
         CIPlayerAssistor.getInstance().setLogEnable(BuildConfig.DEBUG);
     }
 
@@ -70,12 +79,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 CIMediaInfo ciMediaInfo = new CIMediaInfo(orgUrl);
                 executorService.submit(() -> {
                     // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo);
+                    Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo.getMediaUrl(), ciMediaInfo.getPublicKey());
                     // 给ciMediaInfo设置获取到的token和授权信息
                     ciMediaInfo.setJwtToken(pair.first);
                     ciMediaInfo.setAuthorization(pair.second);
                     // 获取最终的播放url
                     String url = CIPlayerAssistor.getInstance().buildPlayerUrl(ciMediaInfo);
+                    String tag = "私有加密M3U8";
+                    runOnUiThread(() -> startActivity(url, tag));
+                });
+                break;
+            case R.id.btn_m3u8_encryption1:
+                // 生成rsa密钥对
+                KeyPairGenerator keyPairGenerator = null;
+                try {
+                    keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                keyPairGenerator.initialize(1024, new SecureRandom()); // 1024 is the keysize.
+                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+                PublicKey publicKey = keyPair.getPublic();
+                PrivateKey privateKey = keyPair.getPrivate();
+                // 注意此处的base64 flags为Base64.DEFAULT
+                String publicKeyString = Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
+                String privateKeyString = Base64.encodeToString(privateKey.getEncoded(), Base64.DEFAULT);
+                // 格式化公钥
+                String headlinePublic = "-----BEGIN RSA PUBLIC KEY-----\n";
+                String footlinePublic = "-----END RSA PUBLIC KEY-----";
+                String rsaPublicKey = headlinePublic + publicKeyString + footlinePublic;
+                byte[] data = rsaPublicKey.getBytes(StandardCharsets.UTF_8);
+                String rsaPublicKeyString = Base64.encodeToString(data, Base64.DEFAULT);
+                // CIMediaInfo实例，自定义私钥
+                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(orgUrl, privateKeyString);
+                executorService.submit(() -> {
+                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
+                    Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKeyString);
+                    // 给privateKeyCiMediaInfo设置获取到的token和授权信息
+                    privateKeyCiMediaInfo.setJwtToken(pair.first);
+                    privateKeyCiMediaInfo.setAuthorization(pair.second);
+                    // 获取最终的播放url
+                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(privateKeyCiMediaInfo);
                     String tag = "私有加密M3U8";
                     runOnUiThread(() -> startActivity(url, tag));
                 });
@@ -100,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 从业务服务器获取token和授权
      */
-    private Pair<String, String> getTokenAndAuthorization(CIMediaInfo ciMediaInfo) {
+    private Pair<String, String> getTokenAndAuthorization(String mediaUrl, String publicKey) {
         HttpURLConnection urlConnection = null;
         try {
             // 该url仅为示例，请替换成您业务的url，具体实现请参考 “业务后端示例代码”
@@ -112,11 +156,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             JSONObject jsonObject = new JSONObject();
             // 添加键值对到JSONObject
-            jsonObject.put("src", ciMediaInfo.getMediaUrl());
-            jsonObject.put("protectContentKey", ciMediaInfo.isPrivate()?1:0);
-            if(ciMediaInfo.isPrivate()) {
-                jsonObject.put("publicKey", ciMediaInfo.getPublicKey());
-            }
+            jsonObject.put("src", mediaUrl);
+            jsonObject.put("protectContentKey", 1);
+            jsonObject.put("publicKey", publicKey);
 
             // 将JSONObject转换为字符串
             String jsonInputString = jsonObject.toString();

@@ -37,6 +37,15 @@
             android:gravity="left|center_vertical"
             android:paddingLeft="30dp"
             android:drawableRight="@drawable/arrow"
-            android:text="私有加密M3U8"/>
+            android:text="私有加密M3U8 - 自动生成rsa密钥对"/>
+
+        <Button
+            android:id="@+id/btn_m3u8_encryption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left|center_vertical"
+            android:paddingLeft="30dp"
+            android:drawableRight="@drawable/arrow"
+            android:text="私有加密M3U8 - 外部设置私钥"/>
     </LinearLayout>
 </ScrollView>
