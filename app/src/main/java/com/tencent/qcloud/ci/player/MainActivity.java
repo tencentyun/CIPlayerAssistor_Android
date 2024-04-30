@@ -56,7 +56,7 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     // 原始的媒体url，请替换成您业务的url，此处url仅为示例
-    private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8";
+    private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8?ci-process=pm3u8";
     // 用于在子线程请求网络 获取token和授权
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     @Override
@@ -81,7 +81,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
                     Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo.getMediaUrl(), ciMediaInfo.getPublicKey());
                     // 给ciMediaInfo设置获取到的token和授权信息
-                    ciMediaInfo.setJwtToken(pair.first);
+                    ciMediaInfo.setToken(pair.first);
+                    /*
+                     * 设置授权信息，会在url上通过&拼接传入的authorization
+                     * 如果原始url是cdn的话，不用传cos的authorization
+                     */
                     ciMediaInfo.setAuthorization(pair.second);
                     // 获取最终的播放url
                     String url = CIPlayerAssistor.getInstance().buildPlayerUrl(ciMediaInfo);
@@ -113,10 +117,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // CIMediaInfo实例，自定义私钥
                 CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(orgUrl, privateKeyString);
                 executorService.submit(() -> {
-                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
+                    // 获取token和授权信息: 自行实现getTokenAndAuthoriz方法
                     Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKeyString);
                     // 给privateKeyCiMediaInfo设置获取到的token和授权信息
-                    privateKeyCiMediaInfo.setJwtToken(pair.first);
+                    privateKeyCiMediaInfo.setToken(pair.first);
+                    /*
+                     * 设置授权信息，会在url上通过&拼接传入的authorization
+                     * 如果原始url是cdn的话，不用传cos的authorization
+                     */
                     privateKeyCiMediaInfo.setAuthorization(pair.second);
                     // 获取最终的播放url
                     String url = CIPlayerAssistor.getInstance().buildPlayerUrl(privateKeyCiMediaInfo);
