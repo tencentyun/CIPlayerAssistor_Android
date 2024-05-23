@@ -62,7 +62,7 @@ dependencies {
 
 //    implementation project(':assistor')
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
-    api(name: 'ci-assistor', ext: 'aar')
+    api(name: 'ci-assistor-10000', ext: 'aar')
 
     //exo播放器
     implementation 'com.google.android.exoplayer:exoplayer:2.18.1'
