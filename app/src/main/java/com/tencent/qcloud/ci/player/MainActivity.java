@@ -109,16 +109,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String publicKeyString = Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
                 String privateKeyString = Base64.encodeToString(privateKey.getEncoded(), Base64.DEFAULT);
                 // 格式化公钥
-                String headlinePublic = "-----BEGIN RSA PUBLIC KEY-----\n";
-                String footlinePublic = "-----END RSA PUBLIC KEY-----";
+                String headlinePublic = "-----BEGIN PUBLIC KEY-----\n";
+                String footlinePublic = "-----END PUBLIC KEY-----";
                 String rsaPublicKey = headlinePublic + publicKeyString + footlinePublic;
-                byte[] data = rsaPublicKey.getBytes(StandardCharsets.UTF_8);
-                String rsaPublicKeyString = Base64.encodeToString(data, Base64.DEFAULT);
+//                String rsaPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+//                        "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCzn58LpxDyvMHOaaX1d32Dp2nX\n" +
+//                        "IleS6+cziqP0EQIC3XUsGYArFXY+25Q5oEf+p0jdT3XvngjFr3cWPaQnNCBjDoav\n" +
+//                        "nmXLiAbgSpdPmgnKEREiK1t7sJd3DiSDwVHIas0XMLsoxmIibYgFju7IG3P+H9LG\n" +
+//                        "aq4yBb/ldMGUjRyM5QIDAQAB\n" +
+//                        "-----END PUBLIC KEY-----";
+                Log.i("CIPlayerAssistor", rsaPublicKey);
+
+                // 格式化私钥
+                String headlinePrivate = "-----BEGIN RSA PRIVATE KEY-----\n";
+                String footlinePrivate = "-----END RSA PRIVATE KEY-----";
+                String rsaPrivateKey = headlinePrivate + privateKeyString + footlinePrivate;
+//                String rsaPrivateKey = "-----BEGIN RSA PRIVATE KEY-----\n" +
+//                        "MIICXQIBAAKBgQCzn58LpxDyvMHOaaX1d32Dp2nXIleS6+cziqP0EQIC3XUsGYAr\n" +
+//                        "FXY+25Q5oEf+p0jdT3XvngjFr3cWPaQnNCBjDoavnmXLiAbgSpdPmgnKEREiK1t7\n" +
+//                        "sJd3DiSDwVHIas0XMLsoxmIibYgFju7IG3P+H9LGaq4yBb/ldMGUjRyM5QIDAQAB\n" +
+//                        "AoGASofL3XDnxmBt5jDODMkUymDXuM1mGu9JUoiPOQEpnXi4WqEGHlpcYv6HRVXt\n" +
+//                        "KYvN3w5OeCtRpn0E47SV/TJS0TUxsloUAv4+jtahh5JXQgbkaMPKwEZeljHh1krB\n" +
+//                        "8U1ls9Ze37CSccjTiPI2j5QL199v34pMJ078SE/UWdR+7I0CQQDd6n4/NktaEuma\n" +
+//                        "rDbVM88rzVV1mlC8GXoPr4Qdd7UMUpWl1uBi/CR4/15Iwh0nJLka3PdI3j4D1kiE\n" +
+//                        "mKLeJkC3AkEAzzY7aNJ/TTPxEKyEzEPn8+srFdce/Q0KeucicreNoyetg/ma9x/j\n" +
+//                        "/2xKZWfum78VKheWYbpl+9W30vEEgPxLQwJBANJANVSWkFXKzWEqANmGuKX7aRh/\n" +
+//                        "GDbevHLYDAgPPo1qQTZam0WtNrEc4at1nkFT3bzB1dhIF+FyyEo4gzaOb4kCQGz0\n" +
+//                        "OzDW3hEeKrd1vy4Y1rIvCaymPKkaXlRZjId9dIBBsL8gVBd1MVFxA31mtNQ4GUzU\n" +
+//                        "skIY3N8adVn5WUDpaDkCQQC3lrukk/TOoSmlUlrCPX5d9HLtAI4SNUGcB1ya+BAE\n" +
+//                        "zcAOo6Fzpox8WT3h3aBz1CIrLYMgqS3dNDIhS6A+VC04\n" +
+//                        "-----END RSA PRIVATE KEY-----";
+                Log.i("CIPlayerAssistor", rsaPrivateKey);
+
                 // CIMediaInfo实例，自定义私钥
-                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(orgUrl, privateKeyString);
+                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(orgUrl, rsaPrivateKey);
                 executorService.submit(() -> {
                     // 获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKeyString);
+                    Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKey);
                     // 给privateKeyCiMediaInfo设置获取到的token和授权信息
                     privateKeyCiMediaInfo.setToken(pair.first);
                     /*
@@ -166,7 +193,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 添加键值对到JSONObject
             jsonObject.put("src", mediaUrl);
             jsonObject.put("protectContentKey", 1);
-            jsonObject.put("publicKey", publicKey);
+            byte[] publicKeyData = publicKey.getBytes(StandardCharsets.UTF_8);
+            jsonObject.put("publicKey", Base64.encodeToString(publicKeyData, Base64.DEFAULT));
 
             // 将JSONObject转换为字符串
             String jsonInputString = jsonObject.toString();
