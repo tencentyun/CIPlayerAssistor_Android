@@ -32,6 +32,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -59,12 +60,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8?ci-process=pm3u8";
     // 用于在子线程请求网络 获取token和授权
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private EditText etUrl;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        findViewById(R.id.btn_m3u8).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption1).setOnClickListener(this);
+        etUrl = findViewById(R.id.etUrl);
+        etUrl.setText(orgUrl);
 
         // 初始化万象播放协助器
         CIPlayerAssistor.getInstance().init(this);
@@ -74,9 +79,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.btn_m3u8:
+                // CIMediaInfo实例，可用于请求token
+                CIMediaInfo standardCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), false);
+                executorService.submit(() -> {
+                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
+                    Pair<String, String> pair = getTokenAndAuthorization(standardCiMediaInfo.getMediaUrl(), standardCiMediaInfo.getPublicKey());
+                    // 给ciMediaInfo设置获取到的token和授权信息
+                    standardCiMediaInfo.setToken(pair.first);
+                    /*
+                     * 设置授权信息，会在url上通过&拼接传入的authorization
+                     * 如果原始url是cdn的话，不用传cos的authorization
+                     */
+                    standardCiMediaInfo.setAuthorization(pair.second);
+                    // 获取最终的播放url
+                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(standardCiMediaInfo);
+                    String tag = "标准加密M3U8";
+                    runOnUiThread(() -> startActivity(url, tag));
+                });
+                break;
             case R.id.btn_m3u8_encryption:
                 // CIMediaInfo实例，可用于请求token
-                CIMediaInfo ciMediaInfo = new CIMediaInfo(orgUrl);
+                CIMediaInfo ciMediaInfo = new CIMediaInfo(etUrl.getText().toString());
                 executorService.submit(() -> {
                     // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
                     Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo.getMediaUrl(), ciMediaInfo.getPublicKey());
@@ -142,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.i("CIPlayerAssistor", rsaPrivateKey);
 
                 // CIMediaInfo实例，自定义私钥
-                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(orgUrl, rsaPrivateKey);
+                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), rsaPrivateKey);
                 executorService.submit(() -> {
                     // 获取token和授权信息: 自行实现getTokenAndAuthoriz方法
                     Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKey);
@@ -192,10 +216,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             JSONObject jsonObject = new JSONObject();
             // 添加键值对到JSONObject
             jsonObject.put("src", mediaUrl);
-            jsonObject.put("protectContentKey", 1);
-            byte[] publicKeyData = publicKey.getBytes(StandardCharsets.UTF_8);
-            jsonObject.put("publicKey", Base64.encodeToString(publicKeyData, Base64.DEFAULT));
-
+            jsonObject.put("protectContentKey", publicKey != null?1:0);
+            if(publicKey != null) {
+                byte[] publicKeyData = publicKey.getBytes(StandardCharsets.UTF_8);
+                jsonObject.put("publicKey", Base64.encodeToString(publicKeyData, Base64.DEFAULT));
+            }
             // 将JSONObject转换为字符串
             String jsonInputString = jsonObject.toString();
 

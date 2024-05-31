@@ -21,3 +21,12 @@
 #-renamesourcefileattribute SourceFile
 # Please add these rules to your existing keep rules in order to suppress warnings.
 # This is generated automatically by the Android Gradle plugin.
+-dontwarn android.media.Spatializer$OnSpatializerStateChangedListener
+-dontwarn android.media.Spatializer
+-dontwarn com.tencent.tvkbeacon.event.open.BeaconConfig$Builder
+-dontwarn com.tencent.tvkbeacon.event.open.BeaconConfig
+-dontwarn com.tencent.tvkbeacon.event.open.BeaconEvent$Builder
+-dontwarn com.tencent.tvkbeacon.event.open.BeaconEvent
+-dontwarn com.tencent.tvkbeacon.event.open.BeaconReport
+-dontwarn com.tencent.tvkbeacon.event.open.EventResult
+-dontwarn com.tencent.tvkbeacon.event.open.EventType

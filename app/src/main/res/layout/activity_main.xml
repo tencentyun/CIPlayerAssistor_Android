@@ -30,6 +30,17 @@
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:padding="20dp">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="m3u8文件链接："/>
+        <EditText
+            android:id="@+id/etUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="请输入m3u8文件链接"
+            android:layout_marginBottom="20dp"/>
+
         <Button
             android:id="@+id/btn_m3u8_encryption"
             android:layout_width="match_parent"
@@ -47,5 +58,13 @@
             android:paddingLeft="30dp"
             android:drawableRight="@drawable/arrow"
             android:text="私有加密M3U8 - 外部设置私钥"/>
+        <Button
+            android:id="@+id/btn_m3u8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left|center_vertical"
+            android:paddingLeft="30dp"
+            android:drawableRight="@drawable/arrow"
+            android:text="标准加密M3U8"/>
     </LinearLayout>
 </ScrollView>
