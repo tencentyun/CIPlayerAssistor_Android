@@ -66,5 +66,13 @@
             android:paddingLeft="30dp"
             android:drawableRight="@drawable/arrow"
             android:text="标准加密M3U8"/>
+        <Button
+            android:id="@+id/btn_play"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left|center_vertical"
+            android:paddingLeft="30dp"
+            android:drawableRight="@drawable/arrow"
+            android:text="直接播放"/>
     </LinearLayout>
 </ScrollView>

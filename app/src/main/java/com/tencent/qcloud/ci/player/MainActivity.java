@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_m3u8).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption1).setOnClickListener(this);
+        findViewById(R.id.btn_play).setOnClickListener(this);
         etUrl = findViewById(R.id.etUrl);
         etUrl.setText(orgUrl);
 
@@ -79,25 +80,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_m3u8:
-                // CIMediaInfo实例，可用于请求token
-                CIMediaInfo standardCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), false);
-                executorService.submit(() -> {
-                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(standardCiMediaInfo.getMediaUrl(), standardCiMediaInfo.getPublicKey());
-                    // 给ciMediaInfo设置获取到的token和授权信息
-                    standardCiMediaInfo.setToken(pair.first);
-                    /*
-                     * 设置授权信息，会在url上通过&拼接传入的authorization
-                     * 如果原始url是cdn的话，不用传cos的authorization
-                     */
-                    standardCiMediaInfo.setAuthorization(pair.second);
-                    // 获取最终的播放url
-                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(standardCiMediaInfo);
-                    String tag = "标准加密M3U8";
-                    runOnUiThread(() -> startActivity(url, tag));
-                });
-                break;
             case R.id.btn_m3u8_encryption:
                 // CIMediaInfo实例，可用于请求token
                 CIMediaInfo ciMediaInfo = new CIMediaInfo(etUrl.getText().toString());
@@ -180,6 +162,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // 获取最终的播放url
                     String url = CIPlayerAssistor.getInstance().buildPlayerUrl(privateKeyCiMediaInfo);
                     String tag = "私有加密M3U8";
+                    runOnUiThread(() -> startActivity(url, tag));
+                });
+                break;
+            case R.id.btn_play:
+                startActivity(etUrl.getText().toString(), "直接播放");
+                break;
+            case R.id.btn_m3u8:
+                // CIMediaInfo实例，可用于请求token
+                CIMediaInfo standardCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), false);
+                executorService.submit(() -> {
+                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
+                    Pair<String, String> pair = getTokenAndAuthorization(standardCiMediaInfo.getMediaUrl(), standardCiMediaInfo.getPublicKey());
+                    // 给ciMediaInfo设置获取到的token和授权信息
+                    standardCiMediaInfo.setToken(pair.first);
+                    /*
+                     * 设置授权信息，会在url上通过&拼接传入的authorization
+                     * 如果原始url是cdn的话，不用传cos的authorization
+                     */
+                    standardCiMediaInfo.setAuthorization(pair.second);
+                    // 获取最终的播放url
+                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(standardCiMediaInfo);
+                    String tag = "标准加密M3U8";
                     runOnUiThread(() -> startActivity(url, tag));
                 });
                 break;
