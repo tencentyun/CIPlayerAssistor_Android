@@ -23,6 +23,7 @@
 package com.tencent.qcloud.ci.player;
 
 
+import static com.tencent.qcloud.ci.player.VideoPlayerActivity.EXTRA_MEDIAINFO;
 import static com.tencent.qcloud.ci.player.VideoPlayerActivity.EXTRA_TAG;
 import static com.tencent.qcloud.ci.player.VideoPlayerActivity.EXTRA_URL;
 
@@ -93,10 +94,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                      * 如果原始url是cdn的话，不用传cos的authorization
                      */
                     ciMediaInfo.setAuthorization(pair.second);
-                    // 获取最终的播放url
-                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(ciMediaInfo);
                     String tag = "私有加密M3U8";
-                    runOnUiThread(() -> startActivity(url, tag));
+                    runOnUiThread(() -> startActivity(ciMediaInfo, tag));
                 });
                 break;
             case R.id.btn_m3u8_encryption1:
@@ -159,10 +158,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                      * 如果原始url是cdn的话，不用传cos的authorization
                      */
                     privateKeyCiMediaInfo.setAuthorization(pair.second);
-                    // 获取最终的播放url
-                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(privateKeyCiMediaInfo);
                     String tag = "私有加密M3U8";
-                    runOnUiThread(() -> startActivity(url, tag));
+                    runOnUiThread(() -> startActivity(privateKeyCiMediaInfo, tag));
                 });
                 break;
             case R.id.btn_play:
@@ -181,10 +178,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                      * 如果原始url是cdn的话，不用传cos的authorization
                      */
                     standardCiMediaInfo.setAuthorization(pair.second);
-                    // 获取最终的播放url
-                    String url = CIPlayerAssistor.getInstance().buildPlayerUrl(standardCiMediaInfo);
                     String tag = "标准加密M3U8";
-                    runOnUiThread(() -> startActivity(url, tag));
+                    runOnUiThread(() -> startActivity(standardCiMediaInfo, tag));
                 });
                 break;
         }
@@ -193,6 +188,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void startActivity(String url, String tag){
         Intent intent = new Intent(this, VideoPlayerActivity.class);
         intent.putExtra(EXTRA_URL, url);
+        intent.putExtra(EXTRA_TAG, tag);
+        startActivity(intent);
+    }
+
+    private void startActivity(CIMediaInfo mediaInfo, String tag){
+        Intent intent = new Intent(this, VideoPlayerActivity.class);
+        intent.putExtra(EXTRA_MEDIAINFO, mediaInfo);
         intent.putExtra(EXTRA_TAG, tag);
         startActivity(intent);
     }

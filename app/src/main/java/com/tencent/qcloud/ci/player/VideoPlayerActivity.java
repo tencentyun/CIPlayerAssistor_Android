@@ -23,6 +23,7 @@
 package com.tencent.qcloud.ci.player;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -32,17 +33,21 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.tencent.qcloud.ci.player.assistor.CIMediaInfo;
+import com.tencent.qcloud.ci.player.assistor.CIPlayerAssistor;
 import com.tencent.qcloud.ci.player.base.BaseActivity;
 import com.tencent.qcloud.ci.player.player.ExoPlayerFragment;
 import com.tencent.qcloud.ci.player.player.SuperPlayerFragment;
 import com.tencent.qcloud.ci.player.player.TXPlayerFragment;
 
 public class VideoPlayerActivity extends BaseActivity {
+    public static final String EXTRA_MEDIAINFO = "extra_mediainfo";
     public static final String EXTRA_URL = "extra_url";
     public static final String EXTRA_TAG = "extra_tag";
 
     private ViewPager2 viewPager;
     private String url;
+    private CIMediaInfo mediaInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +55,7 @@ public class VideoPlayerActivity extends BaseActivity {
         setContentView(R.layout.activity_video_player);
 
         url = getIntent().getStringExtra(EXTRA_URL);
+        mediaInfo = getIntent().getParcelableExtra(EXTRA_MEDIAINFO);
         String tag = getIntent().getStringExtra(EXTRA_TAG);
 
         ActionBar actionBar = getSupportActionBar();
@@ -98,6 +104,11 @@ public class VideoPlayerActivity extends BaseActivity {
     }
 
     public String getUrl() {
-        return url;
+        if(TextUtils.isEmpty(url)){
+            // 获取最终的播放url
+            return CIPlayerAssistor.getInstance().buildPlayerUrl(mediaInfo);
+        } else {
+            return url;
+        }
     }
 }
