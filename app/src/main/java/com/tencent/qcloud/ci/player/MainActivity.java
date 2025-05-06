@@ -31,9 +31,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
-import android.util.Pair;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -55,13 +55,19 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    // 原始的媒体url，请替换成您业务的url，此处url仅为示例
-    private final String orgUrl = "https://ci-h5-bj-1258125638.cos.ap-beijing.myqcloud.com/hls/BigBuckBunny.m3u8?ci-process=pm3u8";
-    // 用于在子线程请求网络 获取token和授权
+    // 媒体资源标识，请替换成您业务的媒体资源标识，此处媒体资源标识仅为示例
+    private final String mediaObjectKey = "hls/encrypt/bunny.m3u8";
+    // 该url仅为示例，请替换成您业务的url，具体实现请参考 “业务后端示例代码”
+    private final String getPlayUrl = "https://carsonxu.com/cos/samples/hls/getPlayUrl";
+
+    private EditText etObjectKey;
+    private EditText etGetPlayUrl;
+    // 用于在子线程请求网络 获取PlayUrl
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private EditText etUrl;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,8 +76,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_m3u8_encryption).setOnClickListener(this);
         findViewById(R.id.btn_m3u8_encryption1).setOnClickListener(this);
         findViewById(R.id.btn_play).setOnClickListener(this);
-        etUrl = findViewById(R.id.etUrl);
-        etUrl.setText(orgUrl);
+        etObjectKey = findViewById(R.id.etObjectKey);
+        etObjectKey.setText(mediaObjectKey);
+        etGetPlayUrl = findViewById(R.id.etGetPlayUrl);
+        etGetPlayUrl.setText(getPlayUrl);
 
         // 初始化万象播放协助器
         CIPlayerAssistor.getInstance().init(this);
@@ -82,18 +90,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_m3u8_encryption:
-                // CIMediaInfo实例，可用于请求token
-                CIMediaInfo ciMediaInfo = new CIMediaInfo(etUrl.getText().toString());
+                // CIMediaInfo实例，可用于请求PlayUrl
+                CIMediaInfo ciMediaInfo = new CIMediaInfo(etObjectKey.getText().toString());
                 executorService.submit(() -> {
-                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(ciMediaInfo.getMediaUrl(), ciMediaInfo.getPublicKey());
-                    // 给ciMediaInfo设置获取到的token和授权信息
-                    ciMediaInfo.setToken(pair.first);
-                    /*
-                     * 设置授权信息，会在url上通过&拼接传入的authorization
-                     * 如果原始url是cdn的话，不用传cos的authorization
-                     */
-                    ciMediaInfo.setAuthorization(pair.second);
+                    // 从业务服务器获取PlayUrl: 自行实现getPlayUrl方法
+                    String playUrl = getPlayUrl(ciMediaInfo.getMedia(), ciMediaInfo.getPublicKey());
+                    // 给ciMediaInfo设置获取到的PlayUrl
+                    ciMediaInfo.setPlayUrl(playUrl);
                     String tag = "私有加密M3U8";
                     runOnUiThread(() -> startActivity(ciMediaInfo, tag));
                 });
@@ -147,37 +150,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.i("CIPlayerAssistor", rsaPrivateKey);
 
                 // CIMediaInfo实例，自定义私钥
-                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), rsaPrivateKey);
+                CIMediaInfo privateKeyCiMediaInfo = new CIMediaInfo(etObjectKey.getText().toString(), rsaPrivateKey);
                 executorService.submit(() -> {
-                    // 获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(privateKeyCiMediaInfo.getMediaUrl(), rsaPublicKey);
-                    // 给privateKeyCiMediaInfo设置获取到的token和授权信息
-                    privateKeyCiMediaInfo.setToken(pair.first);
-                    /*
-                     * 设置授权信息，会在url上通过&拼接传入的authorization
-                     * 如果原始url是cdn的话，不用传cos的authorization
-                     */
-                    privateKeyCiMediaInfo.setAuthorization(pair.second);
+                    // 从业务服务器获取PlayUrl: 自行实现getPlayUrl方法
+                    String playUrl = getPlayUrl(privateKeyCiMediaInfo.getMedia(), rsaPublicKey);
+                    // 给ciMediaInfo设置获取到的PlayUrl
+                    privateKeyCiMediaInfo.setPlayUrl(playUrl);
                     String tag = "私有加密M3U8";
                     runOnUiThread(() -> startActivity(privateKeyCiMediaInfo, tag));
                 });
                 break;
             case R.id.btn_play:
-                startActivity(etUrl.getText().toString(), "直接播放");
+                startActivity(etObjectKey.getText().toString(), "直接播放");
                 break;
             case R.id.btn_m3u8:
-                // CIMediaInfo实例，可用于请求token
-                CIMediaInfo standardCiMediaInfo = new CIMediaInfo(etUrl.getText().toString(), false);
+                // CIMediaInfo实例，可用于请求PlayUrl
+                CIMediaInfo standardCiMediaInfo = new CIMediaInfo(etObjectKey.getText().toString(), false);
                 executorService.submit(() -> {
-                    // 从业务服务器获取token和授权信息: 自行实现getTokenAndAuthoriz方法
-                    Pair<String, String> pair = getTokenAndAuthorization(standardCiMediaInfo.getMediaUrl(), standardCiMediaInfo.getPublicKey());
-                    // 给ciMediaInfo设置获取到的token和授权信息
-                    standardCiMediaInfo.setToken(pair.first);
-                    /*
-                     * 设置授权信息，会在url上通过&拼接传入的authorization
-                     * 如果原始url是cdn的话，不用传cos的authorization
-                     */
-                    standardCiMediaInfo.setAuthorization(pair.second);
+                    // 从业务服务器获取PlayUrl: 自行实现getPlayUrl方法
+                    String playUrl = getPlayUrl(standardCiMediaInfo.getMedia(), standardCiMediaInfo.getPublicKey());
+                    // 给ciMediaInfo设置获取到的PlayUrl
+                    standardCiMediaInfo.setPlayUrl(playUrl);
                     String tag = "标准加密M3U8";
                     runOnUiThread(() -> startActivity(standardCiMediaInfo, tag));
                 });
@@ -207,57 +200,68 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /**
-     * 从业务服务器获取token和授权
+     * 从业务服务器获取PlayUrl
      */
-    private Pair<String, String> getTokenAndAuthorization(String mediaUrl, String publicKey) {
+    private String getPlayUrl(String mediaObjectKey, String publicKey) {
         HttpURLConnection urlConnection = null;
         try {
-            // 该url仅为示例，请替换成您业务的url，具体实现请参考 “业务后端示例代码”
-            URL url = new URL("https://cos.cloud.tencent.com/samples/hls/token");
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setRequestMethod("POST");
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestProperty("Content-Type", "application/json");
+            String getPlayUrl = etGetPlayUrl.getText().toString();
+            if (isValidURL(getPlayUrl)) {
+                URL url = new URL(getPlayUrl);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true);
+                urlConnection.setRequestProperty("Content-Type", "application/json");
 
-            JSONObject jsonObject = new JSONObject();
-            // 添加键值对到JSONObject
-            jsonObject.put("src", mediaUrl);
-            jsonObject.put("protectContentKey", publicKey != null?1:0);
-            if(publicKey != null) {
-                byte[] publicKeyData = publicKey.getBytes(StandardCharsets.UTF_8);
-                jsonObject.put("publicKey", Base64.encodeToString(publicKeyData, Base64.DEFAULT));
-            }
-            // 将JSONObject转换为字符串
-            String jsonInputString = jsonObject.toString();
-
-            byte[] input = jsonInputString.getBytes("utf-8");
-            urlConnection.getOutputStream().write(input, 0, input.length);
-
-            int status = urlConnection.getResponseCode();
-            if (status != 200) {
-                throw new RuntimeException("HttpResponseCode: " + status);
-            } else {
-                BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "utf-8"));
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+                JSONObject jsonObject = new JSONObject();
+                // 添加键值对到JSONObject
+                jsonObject.put("objectKey", mediaObjectKey);
+                jsonObject.put("protectContentKey", publicKey != null?1:0);
+                if(publicKey != null) {
+                    byte[] publicKeyData = publicKey.getBytes(StandardCharsets.UTF_8);
+                    jsonObject.put("publicKey", Base64.encodeToString(publicKeyData, Base64.DEFAULT));
                 }
-                String responseString = response.toString();
-                Log.d("getToKen：", responseString);
-                JSONObject json = new JSONObject(responseString);
-                String token = json.getString("token");
-                String authorization = json.getString("authorization");
-                // 在这里你可以使用token和authorization
-                return new Pair<>(token, authorization);
+                // 将JSONObject转换为字符串
+                String jsonInputString = jsonObject.toString();
+
+                byte[] input = jsonInputString.getBytes("utf-8");
+                urlConnection.getOutputStream().write(input, 0, input.length);
+
+                int status = urlConnection.getResponseCode();
+                if (status != 200) {
+                    runOnUiThread(() -> Toast.makeText(this, "HttpResponseCode: " + status, Toast.LENGTH_LONG).show());
+                    throw new RuntimeException("HttpResponseCode: " + status);
+                } else {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "utf-8"));
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                    String responseString = response.toString();
+                    Log.d("getPlayUrl：", responseString);
+                    JSONObject json = new JSONObject(responseString);
+                    String playUrl = json.getString("playUrl");
+                    return playUrl;
+                }
+            } else {
+                runOnUiThread(() -> Toast.makeText(this, "请输入正确的计算播放链接的业务服务端url", Toast.LENGTH_LONG).show());
+                throw new RuntimeException("请输入正确的计算播放链接的业务服务端url");
             }
         } catch (Exception e) {
             e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show());
             throw new RuntimeException(e);
         } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
         }
+    }
+
+    private static boolean isValidURL(String urlString) {
+        // 验证URL格式
+        Pattern pattern = Pattern.compile("^(http|https)://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?$");
+        return pattern.matcher(urlString).matches();
     }
 }

@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.tencent.qcloud.ci.player.sample"
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -62,7 +62,7 @@ dependencies {
 
 //    implementation project(':assistor')
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
-    api(name: 'ci-assistor-10001', ext: 'aar')
+    api(name: 'ci-assistor-10002', ext: 'aar')
 
     //exo播放器
     implementation 'com.google.android.exoplayer:exoplayer:2.18.1'
@@ -74,6 +74,6 @@ dependencies {
     implementation 'com.tencent.liteav:LiteAVSDK_Player:10.5.0.11177'
     implementation project(':superplayerkit')
     // 超级播放器弹幕集成的第三方库
-    implementation 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
+    implementation 'com.github.ctiao:dfm:0.5.3'
 }
 

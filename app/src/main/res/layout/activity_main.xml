@@ -33,12 +33,23 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="m3u8文件链接："/>
+            android:text="计算播放链接的业务服务端url："/>
         <EditText
-            android:id="@+id/etUrl"
+            android:id="@+id/etGetPlayUrl"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="请输入m3u8文件链接"
+            android:hint="请输入计算播放链接的业务服务端url"
+            android:layout_marginBottom="10dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="媒体资源标识(直接播放请填写url)："/>
+        <EditText
+            android:id="@+id/etObjectKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="请输入媒体资源标识"
             android:layout_marginBottom="20dp"/>
 
         <Button
